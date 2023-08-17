@@ -1,0 +1,58 @@
+name: Maven_Build_Package 
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  build_package:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Maven Version
+      run: mvn -version
+
+    - name: Checkout Repo
+      uses: actions/checkout@v3
+      with:
+        ref: main
+        
+    - name: Cache the Maven packages to speed up build
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2           
+
+    - name:  Check Maven Project Working Directory
+      run: |
+        pwd
+        ls -lrth
+        echo "workspace : ${{ github.workspace }}"
+    - name:  Validate POM file
+      run: |
+        mvn validate
+    - name:  Compile the code
+      run: |
+        mvn compile    
+    - name:  Test the code
+      run: |
+        mvn test
+    - name:  Clean the code
+      run: |
+          mvn clean 
+    - name:  Create a deployable package
+      run: |
+        mvn package
+        ls -lrth target/
+        
+    - name:  Execute Jar file to print the message
+      run: |
+        java -cp target/demoapp-1.0-SNAPSHOT.jar com.example.demo.App
+        
+    - name: Uplaod artifact in workflow
+      uses: actions/upload-artifact@v3
+      with:
+          name: maven-artifact
+          path: target/demoapp-1.0-SNAPSHOT.jar    
+    
